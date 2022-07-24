@@ -8,7 +8,7 @@ import pygame
 import tkinter as tk
 from tkinter import W, messagebox
 
-#holamundo
+#holamundo como esta
 class cube(object):
     rows=20
     w=800
