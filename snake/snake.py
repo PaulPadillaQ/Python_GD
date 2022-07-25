@@ -8,9 +8,8 @@ import pygame
 import tkinter as tk
 from tkinter import W, messagebox
 
-#holamundo como esta
 class cube(object):
-    rows=20
+    rows=16
     w=800
     def __init__(self,start,dirnx=1,dirny=0,color=(255,255,0)):
         self.pos=start
@@ -56,21 +55,30 @@ class snake(object):
 
             for key in keys:
                 if keys[pygame.K_LEFT]:
-                    self.dirnx=-1
-                    self.dirny=0
-                    self.turns[self.head.pos[:]] = [self.dirnx, self.dirny]                 
+                    if self.dirnx==1 and len(self.body)!=1:
+                        break
+                    else:
+                        self.dirnx=-1
+                        self.dirny=0
+                        self.turns[self.head.pos[:]] = [self.dirnx, self.dirny]                 
                 
                 elif keys[pygame.K_RIGHT]:
+                    if self.dirnx==-1 and len(self.body)!=1:
+                        break
                     self.dirnx=1
                     self.dirny=0
                     self.turns[self.head.pos[:]] = [self.dirnx, self.dirny] 
                 
                 elif keys[pygame.K_UP]:
+                    if self.dirny==1 and len(self.body)!=1:
+                        break
                     self.dirnx=0
                     self.dirny=-1
                     self.turns[self.head.pos[:]] = [self.dirnx, self.dirny] 
                 
                 elif keys[pygame.K_DOWN]:
+                    if self.dirny==-1 and len(self.body)!=1:
+                        break
                     self.dirnx=0
                     self.dirny=1
                     self.turns[self.head.pos[:]] = [self.dirnx, self.dirny] 
@@ -91,10 +99,28 @@ class snake(object):
                 else: c.move(c.dirnx,c.dirny)
                 
     def reset(self,pos):
-        pass
+        self.head=cube(pos)
+        self.body=[]
+        self.body.append(self.head)
+        self.turns={}
+        self.dirnx=0
+        self.dirny=1
     
     def addCube(self):
-        pass
+        tail=self.body[-1]
+        dx,dy=tail.dirnx, tail.dirny
+
+        if dx == 1 and dy == 0:
+            self.body.append(cube((tail.pos[0]-1,tail.pos[1])))
+        elif dx == -1 and dy == 0:
+            self.body.append(cube((tail.pos[0]+1,tail.pos[1])))
+        elif dx == 0 and dy == 1:
+            self.body.append(cube((tail.pos[0],tail.pos[1]-1)))
+        elif dx == 0 and dy == -1:
+            self.body.append(cube((tail.pos[0],tail.pos[1]+1)))
+
+        self.body[-1].dirnx = dx
+        self.body[-1].dirny = dy
     
     def draw (self,surface):
         for i,c in enumerate(self.body):
@@ -115,36 +141,68 @@ def drawGrid(w, rows, surface):
         pygame.draw.line(surface, (255,255,255), (0,y),(w,y))
     
 def redrawWindow(surface):
-    global rows,width,s
+    global rows,width,s,snack
     surface.fill((0,0,0))
     s.draw(surface)
+    snack.draw(surface)
     drawGrid(width,rows,surface)
     pygame.display.update()
     
-def randomSnack(rows, items):
-    pass
+def randomSnack(rows, item):
+    positions=item.body
 
+    while True:
+        x=random.randrange(rows)
+        y=random.randrange(rows)
+        if len(list(filter(lambda z:z.pos==(x,y),positions)))>0:
+            continue
+        else:
+            break
+    return(x,y)
+        
 def message_box(subject, content):
-    pass
+    root=tk.Tk()
+    root.attributes("-topmost",True)
+    root.withdraw()
+    messagebox.showinfo(subject,content)
+    try:
+        root.destroy()
+    except:
+        pass
 
 def main():
-    global width,rows,s
+    global width,rows,s,snack
     width = 800
-    rows = 20
+    rows = 16
     win=pygame.display.set_mode((width,width))
+    
     s=snake((255,0,0),(10,10))
+    snack=cube(randomSnack(rows,s), color=(0,255,0))
     flag=True
 
     clock=pygame.time.Clock()
     
     while flag:
-        pygame.time.delay(50)
-        clock.tick(60)
+        pygame.time.delay(25)
+        clock.tick(10)
         s.move()
+        pygame.display.set_caption(("Score: "+str(len(s.body))+"    Culebritas by PPQ"))
+        
+        if s.body[0].pos==snack.pos:
+            s.addCube()
+            snack=snack=cube(randomSnack(rows,s), color=(0,255,0))
+        
+        for x in range(len(s.body)):
+            if s.body[x].pos in list(map(lambda z:z.pos,s.body[x+1:])):
+                score="Score: "+str(len(s.body))
+                print(score)
+                message_box(score,"Juega de Nuevo")
+                s.reset((10,10))
+                break
+
         redrawWindow(win)
 
     pass
-
 #rows=
 #w=
 #h=
